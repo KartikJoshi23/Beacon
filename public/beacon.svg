@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="cup" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6b73c"/>
+      <stop offset="0.55" stop-color="#f2709c"/>
+      <stop offset="1" stop-color="#b483f5"/>
+    </linearGradient>
+  </defs>
+  <!-- steam -->
+  <g fill="none" stroke="#f6b73c" stroke-width="2.4" stroke-linecap="round" opacity="0.85">
+    <path d="M25 14c3-3 3-6 0-9"/>
+    <path d="M33 14c3-3 3-6 0-9"/>
+    <path d="M41 14c3-3 3-6 0-9"/>
+  </g>
+  <!-- cup body -->
+  <path fill="url(#cup)" d="M12 24h34v10c0 9-7 16-17 16S12 43 12 34z"/>
+  <!-- handle -->
+  <path fill="none" stroke="url(#cup)" stroke-width="4" d="M46 27h4a7 7 0 0 1 0 14h-4"/>
+  <!-- saucer -->
+  <rect x="9" y="54" width="40" height="4" rx="2" fill="url(#cup)"/>
+  <!-- inner shading -->
+  <path fill="#0b0806" opacity="0.28" d="M16 28h26v6c0 7-5.5 12.5-13 12.5S16 41 16 34z"/>
+</svg>

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { fmtMoney } from '../lib/format.js';
+import { ALTERNATIVES } from '../data/scenario.js';
 import './InputForm.css';
 
 /** Labeled numeric field. `pct` fields store decimals but display as %. */
@@ -8,12 +9,17 @@ function Field({ label, value, onChange, unit, step = 1, pct = false, hint, min 
     <div className="field">
       <label>
         {label}
-        {hint && <span className="field__hint" title={hint}>?</span>}
+        {hint && (
+          <span className="field__hint" title={hint}>
+            ?
+          </span>
+        )}
       </label>
       <div className="field__control">
         {unit && <span className="field__unit">{unit}</span>}
         <input
           type="number"
+          className={unit ? 'has-unit' : ''}
           value={Number.isFinite(shown) ? shown : ''}
           step={step}
           min={min}
@@ -40,75 +46,72 @@ function Group({ title, accent, children }) {
   );
 }
 
-export default function InputForm({ input, patch, onReset }) {
-  const [open, setOpen] = useState(true);
-  const setUtil = (i, v) => {
-    const u = [...input.utilisation];
-    u[i] = v / 100;
-    patch({ utilisation: u });
-  };
+export default function InputForm({ input, patch, onReset, activePreset, onPreset, variant = 'page' }) {
+  const depBase = (input.initialInvestment || 0) + (input.installTransport || 0);
+  const annualDep = (depBase - (input.salvage || 0)) / (input.life || 1);
 
   return (
-    <aside className="inputform glass hairline">
+    <aside className={`inputform glass hairline inputform--${variant}`}>
       <div className="inputform__header">
         <div>
           <div className="inputform__eyebrow mono">INPUT DECK</div>
-          <h3>Assumptions</h3>
+          <h3>Project assumptions</h3>
         </div>
-        <button className="btn inputform__reset" onClick={onReset} title="Restore base case">
+        <button className="btn inputform__reset" onClick={onReset} title="Restore Location A">
           ↺ Reset
         </button>
       </div>
 
-      <div className={`inputform__body ${open ? '' : 'collapsed'}`}>
-        <Group title="Capital Outlay" accent="var(--cyan)">
-          <Field label="Equipment cost" unit="$" step={10000} value={input.equipment} onChange={(v) => patch({ equipment: v })} />
-          <Field label="Installation" unit="$" step={5000} value={input.installation} onChange={(v) => patch({ installation: v })} />
-          <Field label="Transportation" unit="$" step={5000} value={input.transportation} onChange={(v) => patch({ transportation: v })} />
-          <Field label="Working capital" unit="$" step={5000} value={input.workingCapital} onChange={(v) => patch({ workingCapital: v })} hint="Recovered in full at end of life" />
-          <Field label="Sunk cost (excluded)" unit="$" step={5000} value={input.sunkCost} onChange={(v) => patch({ sunkCost: v })} hint="Feasibility study already paid — shown but excluded from cash flows" />
-        </Group>
-
-        <Group title="Operating Model" accent="var(--violet)">
-          <Field label="Project life" unit="yr" step={1} min={1} value={input.life} onChange={(v) => patch({ life: Math.max(1, Math.round(v)) })} />
-          <Field label="Price / GPU-hr" unit="$" step={0.1} value={input.price} onChange={(v) => patch({ price: v })} />
-          <Field label="Capacity hrs / yr" unit="h" step={1000} value={input.capacityHours} onChange={(v) => patch({ capacityHours: v })} />
-          <Field label="Variable $/GPU-hr" unit="$" step={0.01} value={input.varCostPerHour} onChange={(v) => patch({ varCostPerHour: v })} hint="Electricity + cooling + variable maintenance" />
-          <Field label="Fixed cost / yr" unit="$" step={10000} value={Array.isArray(input.fixedCost) ? input.fixedCost[0] : input.fixedCost} onChange={(v) => patch({ fixedCost: v })} hint="Staff, colocation, bandwidth, insurance" />
-        </Group>
-
-        <div className="ingroup util" style={{ '--g-accent': 'var(--amber)' }}>
-          <div className="ingroup__title">
-            <span className="ingroup__dot" />
-            Utilisation by year
-          </div>
-          <div className="util__row">
-            {input.utilisation.map((u, i) => (
-              <div className="util__cell" key={i}>
-                <label>Y{i + 1}</label>
-                <div className="field__control">
-                  <input type="number" step={1} value={+(u * 100).toFixed(2)} onChange={(e) => setUtil(i, e.target.value === '' ? 0 : parseFloat(e.target.value))} />
-                  <span className="field__suffix">%</span>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Location presets */}
+      <div className="preset-row">
+        <span className="preset-row__label mono">Load a candidate:</span>
+        <div className="preset-row__btns">
+          {ALTERNATIVES.map((a) => (
+            <button
+              key={a.key}
+              className={`preset-btn ${activePreset === a.key ? 'preset-btn--active' : ''}`}
+              onClick={() => onPreset(a)}
+              title={a.blurb}
+            >
+              {a.key}
+            </button>
+          ))}
         </div>
+      </div>
 
-        <Group title="Depreciation · Tax · Salvage" accent="var(--emerald)">
-          <Field label="Salvage value" unit="$" step={5000} value={input.salvage} onChange={(v) => patch({ salvage: v })} />
+      <div className="inputform__body">
+        <Group title="Project & capital outlay" accent="var(--amber)">
+          <Field label="Project life" unit="yr" step={1} min={1} value={input.life} onChange={(v) => patch({ life: Math.max(1, Math.round(v)) })} />
+          <Field label="Initial investment" unit="AED" step={10000} value={input.initialInvestment} onChange={(v) => patch({ initialInvestment: v })} hint="Fit-out, equipment & furniture" />
+          <Field label="Installation & transport" unit="AED" step={5000} value={input.installTransport} onChange={(v) => patch({ installTransport: v })} hint="Setup, signage, freight" />
+          <Field label="Working capital" unit="AED" step={5000} value={input.workingCapital} onChange={(v) => patch({ workingCapital: v })} hint="Inventory + deposits + float; recovered at end" />
+          <Field label="Sunk cost (excluded)" unit="AED" step={5000} value={input.sunkCost} onChange={(v) => patch({ sunkCost: v })} hint="Feasibility/market study already paid — shown but excluded from cash flows" />
+        </Group>
+
+        <Group title="Revenue" accent="var(--cyan)">
+          <Field label="Annual revenue (year 1)" unit="AED" step={50000} value={input.revenueYear1} onChange={(v) => patch({ revenueYear1: v })} hint="Expected first-year sales" />
+          <Field label="Revenue growth / yr" pct step={0.5} value={input.revenueGrowth} onChange={(v) => patch({ revenueGrowth: v })} hint="Same-store sales growth" />
+        </Group>
+
+        <Group title="Operating costs" accent="var(--violet)">
+          <Field label="Fixed cost / yr" unit="AED" step={10000} value={Array.isArray(input.fixedCost) ? input.fixedCost[0] : input.fixedCost} onChange={(v) => patch({ fixedCost: v })} hint="Rent, salaries, utilities, marketing" />
+          <Field label="Fixed cost growth / yr" pct step={0.5} value={input.fixedGrowth} onChange={(v) => patch({ fixedGrowth: v })} hint="Rent & wage escalation" />
+          <Field label="Variable cost (% of sales)" pct step={1} value={input.variableCostPct} onChange={(v) => patch({ variableCostPct: v })} hint="COGS, packaging, card/aggregator fees" />
+        </Group>
+
+        <Group title="Depreciation · tax · salvage" accent="var(--emerald)">
+          <Field label="Salvage value" unit="AED" step={5000} value={input.salvage} onChange={(v) => patch({ salvage: v })} hint="Resale of fixtures at end of life" />
           <Field label="Tax rate" pct step={0.5} value={input.tax} onChange={(v) => patch({ tax: v })} hint="UAE corporate tax" />
-          <Field label="Opportunity cost / yr" unit="$" step={2000} value={input.opportunityCostAnnual} onChange={(v) => patch({ opportunityCostAnnual: v })} hint="Foregone alternative use — relevant cost" />
+          <Field label="Opportunity cost / yr" unit="AED" step={2000} value={input.opportunityCostAnnual} onChange={(v) => patch({ opportunityCostAnnual: v })} hint="Foregone alternative use — a relevant cost" />
+          <div className="field field--readout">
+            <label>Depreciation (SL)</label>
+            <div className="field__readout mono">{fmtMoney(annualDep)}/yr</div>
+          </div>
         </Group>
 
-        <Group title="Cost of Capital" accent="var(--blue)">
-          <Field label="WACC (discount rate)" pct step={0.5} value={input.discountRate} onChange={(v) => patch({ discountRate: v })} />
+        <Group title="Required return" accent="var(--blue)">
+          <Field label="Required return (WACC)" pct step={0.5} value={input.discountRate} onChange={(v) => patch({ discountRate: v })} />
           <Field label="Reinvestment rate" pct step={0.5} value={input.reinvestRate} onChange={(v) => patch({ reinvestRate: v })} hint="Used for MIRR" />
-        </Group>
-
-        <Group title="Cloud Alternative (Buy)" accent="var(--magenta)">
-          <Field label="Cloud rate / GPU-hr" unit="$" step={0.1} value={input.cloudRatePerHour} onChange={(v) => patch({ cloudRatePerHour: v })} hint="All-in committed-use rental cost" />
-          <Field label="Cloud fixed cost / yr" unit="$" step={5000} value={input.cloudFixedCost} onChange={(v) => patch({ cloudFixedCost: v })} />
         </Group>
       </div>
     </aside>

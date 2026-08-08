@@ -1,167 +1,168 @@
 import { useMemo, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import {
-  computeMetrics,
-  incrementalBuildVsBuy,
-  buyStandalone,
-  sensitivity as computeSensitivity,
-  scenarioAnalysis,
-} from './lib/finance.js';
+import { motion, AnimatePresence } from 'framer-motion';
+import { computeMetrics, sensitivity as computeSensitivity, scenarioAnalysis, compareAlternatives } from './lib/finance.js';
 import { deriveVerdict } from './lib/verdict.js';
-import { BASE_CASE, CLOUD_ALTERNATIVE, SCENARIO_BUNDLES } from './data/prometheus.js';
+import { generateInsight } from './lib/insight.js';
+import { BASE_CASE, ALTERNATIVES, SCENARIO_BUNDLES, COMPANY, LOCATION_A } from './data/scenario.js';
+import Nav from './components/Nav.jsx';
 import InputForm from './components/InputForm.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import VerdictBanner from './components/VerdictBanner.jsx';
 import AnalysisSection from './components/AnalysisSection.jsx';
+import AlternativesCompare from './components/AlternativesCompare.jsx';
+import AIInsight from './components/AIInsight.jsx';
 import './App.css';
 
-/** Derive a half-scale "small tier" alternative from the current inputs. */
-function deriveSmallTier(input) {
-  return {
-    ...input,
-    equipment: input.equipment * 0.5,
-    installation: input.installation * 0.6,
-    transportation: input.transportation * 0.5,
-    workingCapital: input.workingCapital * 0.6,
-    capacityHours: input.capacityHours * 0.5,
-    salvage: input.salvage * 0.5,
-  };
+function SectionHead({ eyebrow, title, sub }) {
+  return (
+    <div className="section-head">
+      <div className="section-head__eyebrow">{eyebrow}</div>
+      <h2 className="section-head__title">{title}</h2>
+      {sub && <p className="section-head__sub muted">{sub}</p>}
+    </div>
+  );
 }
 
-const INITIAL = {
-  ...BASE_CASE,
-  cloudRatePerHour: CLOUD_ALTERNATIVE.cloudRatePerHour,
-  cloudFixedCost: CLOUD_ALTERNATIVE.cloudFixedCost,
-};
-
 export default function App() {
-  const [input, setInput] = useState(INITIAL);
+  const [input, setInput] = useState(BASE_CASE);
+  const [tab, setTab] = useState('overview');
+  const [preset, setPreset] = useState('A');
 
-  const patch = useCallback((p) => {
-    setInput((prev) => {
-      const next = { ...prev, ...p };
-      // Keep the utilisation array length in sync with project life.
-      if (p.life && p.life !== prev.utilisation.length) {
-        const u = [...prev.utilisation];
-        if (p.life > u.length) {
-          const last = u[u.length - 1] ?? 0.7;
-          while (u.length < p.life) u.push(last);
-        } else {
-          u.length = p.life;
-        }
-        next.utilisation = u;
-      }
-      return next;
-    });
+  const patch = useCallback((p) => setInput((prev) => ({ ...prev, ...p })), []);
+  const reset = useCallback(() => {
+    setInput(LOCATION_A.input);
+    setPreset('A');
+  }, []);
+  const loadPreset = useCallback((loc) => {
+    setInput(loc.input);
+    setPreset(loc.key);
   }, []);
 
-  const reset = useCallback(() => setInput(INITIAL), []);
-
   const metrics = useMemo(() => computeMetrics(input), [input]);
-  const incremental = useMemo(
-    () =>
-      incrementalBuildVsBuy(input, {
-        cloudRatePerHour: input.cloudRatePerHour,
-        cloudFixedCost: input.cloudFixedCost,
-      }),
-    [input]
-  );
-  const verdict = useMemo(
-    () => deriveVerdict({ metrics, incremental, wacc: input.discountRate, life: input.life }),
-    [metrics, incremental, input.discountRate, input.life]
-  );
-
   const sensitivity = useMemo(() => computeSensitivity(input, { pct: 0.2 }), [input]);
   const scenarios = useMemo(() => scenarioAnalysis(input, SCENARIO_BUNDLES), [input]);
-  const buy = useMemo(
-    () =>
-      buyStandalone(input, {
-        cloudRatePerHour: input.cloudRatePerHour,
-        cloudFixedCost: input.cloudFixedCost,
-      }),
-    [input]
+  const comparison = useMemo(() => compareAlternatives(ALTERNATIVES), []);
+
+  const currentName = useMemo(() => ALTERNATIVES.find((a) => a.key === preset)?.name ?? 'Current scenario', [preset]);
+  const verdict = useMemo(
+    () => deriveVerdict({ metrics, best: comparison.best, wacc: input.discountRate, life: input.life, currentName }),
+    [metrics, comparison, input.discountRate, input.life, currentName]
   );
-  const small = useMemo(() => computeMetrics(deriveSmallTier(input)), [input]);
+  const insight = useMemo(
+    () => generateInsight({ metrics, comparison, sensitivity, input, verdict, currentName }),
+    [metrics, comparison, sensitivity, input, verdict, currentName]
+  );
 
   return (
     <div className="app">
-      {/* ---------- Top nav ---------- */}
-      <header className="nav">
-        <div className="container nav__inner">
-          <div className="nav__brand">
-            <img src="/flame.svg" alt="" className="nav__logo" />
-            <div>
-              <div className="nav__title">PROMETHEUS</div>
-              <div className="nav__sub mono">Nexus Intelligence · Capital Budgeting</div>
-            </div>
-          </div>
-          <div className="nav__actions">
-            <span className="chip">USD · UAE 9% tax</span>
-            <a className="btn" href="#results">View results ↓</a>
-          </div>
-        </div>
-      </header>
+      <Nav active={tab} setActive={setTab} verdict={verdict} metrics={metrics} />
 
-      {/* ---------- Hero ---------- */}
-      <section className="hero">
-        <div className="hero__orb" aria-hidden />
-        <div className="container hero__inner">
-          <motion.div
-            className="chip hero__chip"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            ⚡ CAPITAL INVESTMENT APPRAISAL
-          </motion.div>
-          <motion.h1
-            className="hero__title"
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.05 }}
-          >
-            Should we forge our own <span className="grad-text">intelligence</span>,
-            <br />
-            or rent it?
-          </motion.h1>
-          <motion.p
-            className="hero__lede"
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.12 }}
-          >
-            A full capital-budgeting appraisal of building an on-premise GPU inference cluster
-            versus renting equivalent cloud capacity — 13 investment measures, sensitivity &
-            scenario analysis, and an AI-assisted recommendation.
-          </motion.p>
-        </div>
-      </section>
+      <main className="main">
+        <div className="container">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={tab}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {tab === 'overview' && (
+                <section className="overview">
+                  <div className="hero">
+                    <div className="hero__orb" aria-hidden />
+                    <motion.div className="chip hero__chip" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                      ☕ CAPITAL INVESTMENT APPRAISAL
+                    </motion.div>
+                    <motion.h1 className="hero__title" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.05 }}>
+                      Which new <span className="grad-text">branch</span> should
+                      <br /> we open?
+                    </motion.h1>
+                    <motion.p className="hero__lede" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.12 }}>
+                      {COMPANY.name} — {COMPANY.sector}, {COMPANY.city} — is weighing three candidate sites for its
+                      next outlet. This tool runs the full capital-budgeting appraisal on each: 13 investment
+                      measures, sensitivity &amp; scenario analysis, and an AI-assisted recommendation.
+                    </motion.p>
+                    <div className="hero__chips">
+                      <span className="chip">AED · UAE 9% tax</span>
+                      <span className="chip">3 candidate sites</span>
+                      <span className="chip">6-year horizon</span>
+                    </div>
+                  </div>
 
-      {/* ---------- Workbench ---------- */}
-      <main id="results" className="container workbench">
-        <InputForm input={input} patch={patch} onReset={reset} />
-        <div className="workbench__results">
-          <VerdictBanner verdict={verdict} metrics={metrics} wacc={input.discountRate} />
-          <Dashboard metrics={metrics} incremental={incremental} input={input} />
+                  <VerdictBanner verdict={verdict} metrics={metrics} wacc={input.discountRate} />
+
+                  <div className="cta-row">
+                    <button className="btn btn-primary" onClick={() => setTab('results')}>See full results →</button>
+                    <button className="btn" onClick={() => setTab('alternatives')}>Compare the sites</button>
+                    <button className="btn" onClick={() => setTab('inputs')}>Edit assumptions</button>
+                  </div>
+                </section>
+              )}
+
+              {tab === 'inputs' && (
+                <section>
+                  <SectionHead
+                    eyebrow="ASSUMPTIONS"
+                    title="Enter the project inputs"
+                    sub="Everything a capital-budgeting appraisal needs — enter values directly, or load a candidate site to start. Results update live across every tab."
+                  />
+                  <InputForm input={input} patch={patch} onReset={reset} activePreset={preset} onPreset={loadPreset} variant="page" />
+                </section>
+              )}
+
+              {tab === 'results' && (
+                <section>
+                  <SectionHead
+                    eyebrow={`RESULTS · ${currentName.toUpperCase()}`}
+                    title="The 13 capital-budgeting measures"
+                    sub="Every required output, computed client-side and independently verified. Currency in AED."
+                  />
+                  <VerdictBanner verdict={verdict} metrics={metrics} wacc={input.discountRate} />
+                  <Dashboard metrics={metrics} input={input} />
+                </section>
+              )}
+
+              {tab === 'analysis' && (
+                <section>
+                  <SectionHead
+                    eyebrow="DEEPER ANALYSIS"
+                    title="Timeline, sensitivity &amp; scenarios"
+                    sub="The cash-flow recovery path, one-at-a-time sensitivity, worst/base/best scenarios, and return margins over the hurdle rate."
+                  />
+                  <AnalysisSection metrics={metrics} sensitivity={sensitivity} scenarios={scenarios} wacc={input.discountRate} />
+                </section>
+              )}
+
+              {tab === 'alternatives' && (
+                <section>
+                  <SectionHead
+                    eyebrow="COMPARE ALTERNATIVES"
+                    title="Which of the three sites wins?"
+                    sub="The candidate outlets are mutually exclusive — only one branch opens — so they are ranked by NPV, the value-maximising criterion."
+                  />
+                  <AlternativesCompare comparison={comparison} wacc={input.discountRate} />
+                </section>
+              )}
+
+              {tab === 'ai' && (
+                <section>
+                  <SectionHead
+                    eyebrow="AI ADVISOR"
+                    title="Plain-language insight &amp; recommendation"
+                    sub="An AI reading of the numbers — explanation, risks, alternative comparison and a final Accept / Reject / Delay / Review verdict — to support (not replace) your judgement."
+                  />
+                  <AIInsight insight={insight} />
+                </section>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 
-      <div className="container">
-        <AnalysisSection
-          metrics={metrics}
-          sensitivity={sensitivity}
-          scenarios={scenarios}
-          build={metrics}
-          buy={buy}
-          small={small}
-          incremental={incremental}
-          wacc={input.discountRate}
-        />
-      </div>
-
       <footer className="footer">
         <div className="container footer__inner">
-          <span className="mono dim">Project PROMETHEUS · Corporate Finance</span>
+          <span className="mono dim">Project BEACON · Corporate Finance</span>
           <span className="mono dim">Kartik Joshi · Masters in AI with Business</span>
         </div>
       </footer>

@@ -1,9 +1,9 @@
 {
-  "name": "project-prometheus",
+  "name": "beacon",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Project PROMETHEUS - AI-powered capital budgeting & investment decision application (Nexus Intelligence FZ-LLC: build vs buy an on-prem GPU inference cluster).",
+  "description": "Project BEACON - AI-powered capital budgeting & investment decision application (Cardamom & Co.: which new coffee branch should we open?).",
   "author": "Kartik Joshi",
   "license": "UNLICENSED",
   "scripts": {

@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
 import MetricCard from './MetricCard.jsx';
-import { fmtUSD, fmtPct, fmtX, fmtYears, fmtNum } from '../lib/format.js';
+import { fmtMoney, fmtMoneyCompact, fmtPct, fmtX, fmtYears } from '../lib/format.js';
 import './Dashboard.css';
 
-export default function Dashboard({ metrics, incremental, input }) {
+export default function Dashboard({ metrics, input }) {
   const wacc = input.discountRate;
   const life = input.life;
   const m = metrics;
@@ -12,8 +12,9 @@ export default function Dashboard({ metrics, incremental, input }) {
     {
       label: 'Net Present Value',
       value: m.npv,
-      format: (v) => fmtUSD(v),
+      format: (v) => fmtMoneyCompact(v),
       tone: m.npv > 0 ? 'pos' : 'neg',
+      sub: fmtMoney(m.npv),
       hint: 'PV of all cash flows minus the initial outlay. > 0 creates value.',
       big: true,
     },
@@ -23,7 +24,7 @@ export default function Dashboard({ metrics, incremental, input }) {
       format: (v) => fmtPct(v),
       tone: m.irr > wacc ? 'pos' : 'neg',
       sub: `hurdle ${fmtPct(wacc)}`,
-      hint: 'Discount rate at which NPV = 0. Accept if IRR > WACC.',
+      hint: 'Discount rate at which NPV = 0. Accept if IRR > required return.',
       big: true,
     },
     {
@@ -31,7 +32,7 @@ export default function Dashboard({ metrics, incremental, input }) {
       value: m.mirr,
       format: (v) => fmtPct(v),
       tone: m.mirr > wacc ? 'pos' : 'neg',
-      hint: 'Modified IRR — assumes reinvestment at WACC, fixing IRR’s optimism.',
+      hint: 'Modified IRR — assumes reinvestment at the required return.',
     },
     {
       label: 'Profitability Index',
@@ -60,34 +61,35 @@ export default function Dashboard({ metrics, incremental, input }) {
       format: (v) => fmtPct(v),
       tone: 'neutral',
       accent: 'var(--violet)',
-      sub: `avg profit ${fmtUSD(m.arr.avgProfit)}`,
+      sub: `avg profit ${fmtMoneyCompact(m.arr.avgProfit)}`,
       hint: 'Average after-tax profit ÷ average investment.',
     },
     {
       label: 'Initial Cash Flow',
       value: m.initialCashFlow,
-      format: (v) => fmtUSD(v),
+      format: (v) => fmtMoneyCompact(v),
       tone: 'neutral',
-      accent: 'var(--cyan)',
-      hint: 'Equipment + install + transport + working capital (sunk cost excluded).',
+      accent: 'var(--amber)',
+      sub: fmtMoney(m.initialCashFlow),
+      hint: 'Initial investment + install/transport + working capital (sunk cost excluded).',
     },
     {
       label: 'Terminal-Year Cash Flow',
       value: m.terminalCashFlow,
-      format: (v) => fmtUSD(v),
+      format: (v) => fmtMoneyCompact(v),
       tone: 'neutral',
       accent: 'var(--emerald)',
       sub: 'after-tax salvage + WC recovery',
       hint: 'Added on top of the final year’s operating cash flow.',
     },
     {
-      label: 'Break-even Utilisation',
-      value: m.breakEven.utilisation,
-      format: (v) => fmtPct(v),
+      label: 'Break-even Revenue',
+      value: m.breakEven.revenue,
+      format: (v) => fmtMoneyCompact(v),
       tone: 'warn',
       accent: 'var(--amber)',
-      sub: `${fmtNum(m.breakEven.hours)} GPU-hrs`,
-      hint: 'Capacity utilisation where accounting profit = 0.',
+      sub: `${fmtPct(m.breakEven.pctOfYear1)} of yr-1 sales`,
+      hint: 'Year-1 revenue at which accounting profit = 0.',
     },
   ];
 
@@ -101,7 +103,6 @@ export default function Dashboard({ metrics, incremental, input }) {
           <MetricCard key={c.label} index={i} {...c} />
         ))}
 
-        {/* Annual operating cash flows strip (output #2) */}
         <motion.div
           className="ocf-strip glass hairline"
           initial={{ opacity: 0, y: 22 }}
@@ -113,7 +114,7 @@ export default function Dashboard({ metrics, incremental, input }) {
           <div className="ocf-strip__bars">
             {ocfs.map((v, i) => (
               <div className="ocf-bar" key={i}>
-                <div className="ocf-bar__val mono">{fmtUSD(v)}</div>
+                <div className="ocf-bar__val mono">{fmtMoneyCompact(v)}</div>
                 <div className="ocf-bar__track">
                   <motion.div
                     className="ocf-bar__fill"

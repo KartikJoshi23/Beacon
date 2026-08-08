@@ -60,15 +60,16 @@
 }
 
 .metric-card__value {
-  font-size: clamp(24px, 2.4vw, 32px);
+  font-size: clamp(20px, 2vw, 26px);
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text);
   line-height: 1.05;
+  white-space: nowrap;
 }
 
 .metric-card--big .metric-card__value {
-  font-size: clamp(30px, 3.4vw, 46px);
+  font-size: clamp(23px, 2.3vw, 31px);
 }
 
 .metric-card__sub {

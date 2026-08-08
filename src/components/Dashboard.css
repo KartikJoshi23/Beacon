@@ -3,9 +3,8 @@
 }
 .dashboard__grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(216px, 1fr));
   gap: 14px;
-  grid-auto-flow: dense;
 }
 
 /* Feature the two headline metrics */

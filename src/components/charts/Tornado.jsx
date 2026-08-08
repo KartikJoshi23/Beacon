@@ -2,12 +2,12 @@ import { motion } from 'framer-motion';
 import { fmtUSDcompact } from '../../lib/format.js';
 
 const LABELS = {
-  price: 'Price / GPU-hr',
-  utilisation: 'Utilisation',
-  equipment: 'Equipment capex',
-  fixedCost: 'Fixed cost',
-  discountRate: 'WACC',
-  varCostPerHour: 'Variable cost',
+  revenue: 'Sales revenue',
+  variableCostPct: 'Variable cost %',
+  fixedCost: 'Fixed cost (rent)',
+  initialInvestment: 'Fit-out capex',
+  discountRate: 'Required return',
+  salvage: 'Salvage value',
 };
 
 /** Sensitivity tornado: NPV range per driver at ±pct, sorted by swing. */

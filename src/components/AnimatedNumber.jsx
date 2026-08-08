@@ -7,7 +7,7 @@ import { useInView, useMotionValue, animate } from 'framer-motion';
  */
 export default function AnimatedNumber({ value, format = (v) => v, duration = 1.1, className }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: false, margin: '-10% 0px' });
+  const inView = useInView(ref, { once: true, margin: '-8% 0px' });
   const mv = useMotionValue(0);
   const started = useRef(false);
 

@@ -1,17 +1,19 @@
 /**
- * finance.js — Capital-budgeting engine for Project PROMETHEUS
+ * finance.js — Capital-budgeting engine (Project BEACON)
  * ------------------------------------------------------------------
- * Pure, dependency-free, deterministic functions. Currency-agnostic.
- * Convention: a "cashflows" array is indexed by year, cashflows[0] is the
- * time-0 outlay (already negative). All rates are decimals (0.13 = 13%).
+ * Pure, dependency-free, deterministic. Currency-agnostic.
+ * Convention: a "cashflows" array is indexed by year; cashflows[0] is the
+ * time-0 outlay (already negative). Rates are decimals (0.14 = 14%).
  *
- * Every formula here is the textbook corporate-finance definition; the
- * companion harness scripts/verify.mjs proves them against hand-computed
- * anchors and internal identities.
+ * The operating model uses ONLY the generic, brief-mandated inputs
+ * (initial investment, install/transport, working capital, life, annual
+ * revenues, fixed & variable costs, depreciation, tax, salvage, required
+ * return). It is not tied to any single industry, so a non-finance user can
+ * drive it directly. scripts/verify.mjs proves every formula.
  */
 
 // ------------------------------------------------------------------
-// Small numeric helpers
+// Numeric helpers
 // ------------------------------------------------------------------
 const sum = (a) => a.reduce((s, x) => s + x, 0);
 const round = (x, dp = 2) => {
@@ -20,7 +22,7 @@ const round = (x, dp = 2) => {
 };
 
 // ------------------------------------------------------------------
-// Core time-value primitives
+// Core time-value primitives (verified — unchanged)
 // ------------------------------------------------------------------
 
 /** Net Present Value including the t0 outlay. cashflows[0] is time 0. */
@@ -28,17 +30,13 @@ export function npv(rate, cashflows) {
   return cashflows.reduce((acc, cf, t) => acc + cf / (1 + rate) ** t, 0);
 }
 
-/**
- * Internal Rate of Return via robust bracketing + bisection.
- * Returns null when no sign change exists in [-0.9999, 100].
- */
+/** Internal Rate of Return via robust bracketing + bisection. */
 export function irr(cashflows, { lo = -0.9999, hi = 100, tol = 1e-9, maxIter = 500 } = {}) {
   const f = (r) => npv(r, cashflows);
   let a = lo;
   let b = hi;
   let fa = f(a);
   let fb = f(b);
-  // Scan for a sign change if the wide bracket doesn't straddle a root.
   if (fa * fb > 0) {
     let prevR = lo;
     let prevF = fa;
@@ -74,10 +72,7 @@ export function irr(cashflows, { lo = -0.9999, hi = 100, tol = 1e-9, maxIter = 5
   return mid;
 }
 
-/**
- * Modified IRR. Negative flows discounted to t0 at financeRate; positive
- * flows compounded to tN at reinvestRate. n = number of periods (years).
- */
+/** Modified IRR. Negatives discounted at financeRate; positives compounded at reinvestRate. */
 export function mirr(cashflows, financeRate, reinvestRate) {
   const n = cashflows.length - 1;
   let pvNeg = 0;
@@ -94,11 +89,11 @@ export function mirr(cashflows, financeRate, reinvestRate) {
 export function profitabilityIndex(rate, cashflows) {
   const initial = -cashflows[0];
   if (initial === 0) return null;
-  const pvInflows = npv(rate, cashflows) - cashflows[0]; // = NPV + |CF0|
+  const pvInflows = npv(rate, cashflows) - cashflows[0];
   return pvInflows / initial;
 }
 
-/** Undiscounted payback period with linear interpolation within the year. */
+/** Undiscounted payback period with linear interpolation. */
 export function paybackPeriod(cashflows) {
   let cumulative = cashflows[0];
   for (let t = 1; t < cashflows.length; t++) {
@@ -109,10 +104,10 @@ export function paybackPeriod(cashflows) {
       return t - 1 + fraction;
     }
   }
-  return null; // never recovers
+  return null;
 }
 
-/** Discounted payback period (interpolated) at the given discount rate. */
+/** Discounted payback period (interpolated). */
 export function discountedPayback(rate, cashflows) {
   const disc = cashflows.map((cf, t) => cf / (1 + rate) ** t);
   return paybackPeriod(disc);
@@ -120,9 +115,7 @@ export function discountedPayback(rate, cashflows) {
 
 /**
  * Accounting Rate of Return.
- * primary  = average annual after-tax profit / average investment
- * average investment = (depreciable base + salvage) / 2
- * Also returns the initial-investment variant for transparency.
+ * onAverageInvestment = avg after-tax profit / average investment [(base+salvage)/2]
  */
 export function arr({ afterTaxProfits, depreciableBase, salvage }) {
   const avgProfit = sum(afterTaxProfits) / afterTaxProfits.length;
@@ -139,74 +132,60 @@ export function arr({ afterTaxProfits, depreciableBase, salvage }) {
 // Depreciation
 // ------------------------------------------------------------------
 
-/** Straight-line schedule. To zero by default (tax convention), or to salvage. */
-export function straightLineDepreciation({ depreciableBase, life, salvage = 0, toSalvage = false }) {
+/** Straight-line schedule. To salvage by default, or to zero (tax convention). */
+export function straightLineDepreciation({ depreciableBase, life, salvage = 0, toSalvage = true }) {
   const target = toSalvage ? salvage : 0;
   const annual = (depreciableBase - target) / life;
   return Array.from({ length: life }, () => annual);
 }
 
 // ------------------------------------------------------------------
-// Full project builder (PROMETHEUS operating model)
+// Generic project builder
 // ------------------------------------------------------------------
 
 /**
- * Build the complete year-by-year schedule and net cash-flow vector for a
- * capacity/utilisation-driven project.
+ * Build the full year-by-year schedule and net cash-flow vector.
  *
- * Revenue_t   = price * capacityHours * utilisation_t
- * Variable_t  = varCostPerHour * capacityHours * utilisation_t
- * EBIT_t      = Revenue_t - Variable_t - fixed_t - opportunity_t - dep_t
- * Tax_t       = EBIT_t * tax        (symmetric loss offset when enabled)
- * OCF_t       = EBIT_t - Tax_t + dep_t
+ * Revenue_t   = revenueOverrides[t]  OR  revenueYear1 * (1+revenueGrowth)^(t-1)
+ * Variable_t  = variableCostPct * Revenue_t
+ * Fixed_t     = fixedCost[t]  OR  fixedCost * (1+fixedGrowth)^(t-1)
+ * EBIT_t      = Revenue_t - Variable_t - Fixed_t - Opportunity_t - Dep_t
+ * Tax_t       = EBIT_t * tax          (symmetric loss offset when enabled)
+ * OCF_t       = EBIT_t - Tax_t + Dep_t
  *
- * Initial (t0) = -(equipment + installation + transportation + workingCapital)
- * Terminal add (tN) = [salvage - tax*(salvage - bookEnd)] + workingCapital
+ * Initial (t0)   = -(initialInvestment + installTransport + workingCapital)   [sunk cost EXCLUDED]
+ * Terminal (tN) += [salvage - tax*(salvage - bookEnd)] + workingCapital
  */
 export function buildProject(input) {
   const {
-    equipment,
-    installation = 0,
-    transportation = 0,
+    initialInvestment,
+    installTransport = 0,
     workingCapital = 0,
     life,
-    price,
-    capacityHours,
-    utilisation, // array length = life
-    varCostPerHour,
-    fixedCost, // scalar or array
-    tax,
+    revenueYear1,
+    revenueGrowth = 0,
+    revenueOverrides = null,
+    variableCostPct,
+    fixedCost,
+    fixedGrowth = 0,
+    depreciateToSalvage = true,
     salvage = 0,
-    discountRate,
-    depreciateToSalvage = false,
+    tax,
     opportunityCostAnnual = 0,
     taxLossOffset = true,
-    sunkCost = 0, // stored for display; intentionally EXCLUDED from cash flows
+    sunkCost = 0, // stored for display; intentionally EXCLUDED
   } = input;
 
-  const fixedArr = Array.isArray(fixedCost)
-    ? fixedCost
-    : Array.from({ length: life }, () => fixedCost);
-  const utilArr = Array.isArray(utilisation)
-    ? utilisation
-    : Array.from({ length: life }, () => utilisation);
-
-  const depreciableBase = equipment + installation + transportation;
-  const dep = straightLineDepreciation({
-    depreciableBase,
-    life,
-    salvage,
-    toSalvage: depreciateToSalvage,
-  });
+  const depreciableBase = initialInvestment + installTransport;
+  const dep = straightLineDepreciation({ depreciableBase, life, salvage, toSalvage: depreciateToSalvage });
   const bookEnd = depreciateToSalvage ? salvage : 0;
 
   const rows = [];
   const afterTaxProfits = [];
   for (let i = 0; i < life; i++) {
-    const soldHours = capacityHours * utilArr[i];
-    const revenue = price * soldHours;
-    const variable = varCostPerHour * soldHours;
-    const fixed = fixedArr[i];
+    const revenue = revenueOverrides ? revenueOverrides[i] : revenueYear1 * (1 + revenueGrowth) ** i;
+    const variable = variableCostPct * revenue;
+    const fixed = Array.isArray(fixedCost) ? fixedCost[i] : fixedCost * (1 + fixedGrowth) ** i;
     const opp = opportunityCostAnnual;
     const ebit = revenue - variable - fixed - opp - dep[i];
     const taxable = taxLossOffset ? ebit : Math.max(0, ebit);
@@ -214,26 +193,13 @@ export function buildProject(input) {
     const nopat = ebit - taxAmt;
     const ocf = nopat + dep[i];
     afterTaxProfits.push(nopat);
-    rows.push({
-      year: i + 1,
-      soldHours,
-      revenue,
-      variable,
-      fixed,
-      opportunity: opp,
-      depreciation: dep[i],
-      ebit,
-      tax: taxAmt,
-      nopat,
-      ocf,
-    });
+    rows.push({ year: i + 1, revenue, variable, fixed, opportunity: opp, depreciation: dep[i], ebit, tax: taxAmt, nopat, ocf });
   }
 
-  const initial = -(equipment + installation + transportation + workingCapital);
+  const initial = -(initialInvestment + installTransport + workingCapital);
   const afterTaxSalvage = salvage - tax * (salvage - bookEnd);
-  const terminalAdd = afterTaxSalvage + workingCapital; // WC fully recovered
+  const terminalAdd = afterTaxSalvage + workingCapital;
 
-  // Net cash-flow vector (t0..tN)
   const cashflows = [initial];
   rows.forEach((r) => cashflows.push(r.ocf));
   cashflows[life] += terminalAdd;
@@ -253,12 +219,12 @@ export function buildProject(input) {
 }
 
 // ------------------------------------------------------------------
-// Metric suite (all 13 outputs, assembled)
+// Metric suite (all 13 outputs)
 // ------------------------------------------------------------------
 
 export function computeMetrics(input) {
   const project = buildProject(input);
-  const { cashflows, rows, afterTaxProfits, depreciableBase, initial } = project;
+  const { cashflows, rows, afterTaxProfits, depreciableBase } = project;
   const rate = input.discountRate;
 
   const npvValue = npv(rate, cashflows);
@@ -268,23 +234,17 @@ export function computeMetrics(input) {
   const pi = profitabilityIndex(rate, cashflows);
   const payback = paybackPeriod(cashflows);
   const discPayback = discountedPayback(rate, cashflows);
-  const arrValue = arr({
-    afterTaxProfits,
-    depreciableBase,
-    salvage: input.salvage ?? 0,
-  });
+  const arrValue = arr({ afterTaxProfits, depreciableBase, salvage: input.salvage ?? 0 });
 
-  // Accounting break-even (GPU-hours) using year-1 fixed + depreciation:
-  const contributionPerHour = input.price - input.varCostPerHour;
-  const beHours =
-    contributionPerHour <= 0
-      ? null
-      : (rows[0].fixed + project.dep[0]) / contributionPerHour;
-  const beUtilisation = beHours == null ? null : beHours / input.capacityHours;
+  // Accounting break-even in revenue terms (year 1 basis):
+  const contributionRatio = 1 - input.variableCostPct;
+  const beRevenue =
+    contributionRatio <= 0 ? null : (rows[0].fixed + project.dep[0] + (input.opportunityCostAnnual ?? 0)) / contributionRatio;
+  const beRevenuePctY1 = beRevenue == null ? null : beRevenue / rows[0].revenue;
 
   return {
     project,
-    initialCashFlow: initial,
+    initialCashFlow: project.initial,
     annualOperatingCashFlows: rows.map((r) => r.ocf),
     terminalCashFlow: project.terminalAdd,
     payback,
@@ -294,94 +254,67 @@ export function computeMetrics(input) {
     irr: irrValue,
     mirr: mirrValue,
     profitabilityIndex: pi,
-    breakEven: { hours: beHours, utilisation: beUtilisation, contributionPerHour },
+    breakEven: { revenue: beRevenue, pctOfYear1: beRevenuePctY1, contributionRatio },
     cashflows,
   };
 }
 
 // ------------------------------------------------------------------
-// Break-even on NPV: solve for the utilisation multiplier where NPV = 0
+// NPV break-even on the revenue scale (solve for revenue factor s.t. NPV=0)
 // ------------------------------------------------------------------
 
-/**
- * Scales every year's utilisation by a factor k and finds the k where NPV=0.
- * Returns { factor, utilisationAtBE } or null if no root in [0, 5].
- */
-export function npvBreakEvenUtilisation(input) {
-  const baseUtil = Array.isArray(input.utilisation)
-    ? input.utilisation
-    : Array.from({ length: input.life }, () => input.utilisation);
-  const npvAtFactor = (k) => {
-    const scaled = { ...input, utilisation: baseUtil.map((u) => u * k) };
+export function npvBreakEvenRevenue(input) {
+  const npvAtK = (k) => {
+    const scaled = { ...input };
+    if (input.revenueOverrides) scaled.revenueOverrides = input.revenueOverrides.map((r) => r * k);
+    else scaled.revenueYear1 = input.revenueYear1 * k;
     return npv(input.discountRate, buildProject(scaled).cashflows);
   };
   let a = 0;
-  let b = 5;
-  let fa = npvAtFactor(a);
-  let fb = npvAtFactor(b);
+  let b = 3;
+  let fa = npvAtK(a);
+  let fb = npvAtK(b);
   if (fa * fb > 0) return null;
   let mid = a;
   for (let i = 0; i < 300; i++) {
     mid = (a + b) / 2;
-    const fm = npvAtFactor(mid);
+    const fm = npvAtK(mid);
     if (Math.abs(fm) < 1e-6 || (b - a) / 2 < 1e-9) break;
-    if (fa * fm < 0) {
-      b = mid;
-    } else {
+    if (fa * fm < 0) b = mid;
+    else {
       a = mid;
       fa = fm;
     }
   }
-  return {
-    factor: mid,
-    utilisationAtBE: baseUtil.map((u) => u * mid),
-    meanUtilisationAtBE: (sum(baseUtil) / baseUtil.length) * mid,
-  };
+  return { factor: mid, revenueAtBE: (input.revenueYear1 ?? 0) * mid };
 }
 
 // ------------------------------------------------------------------
-// Sensitivity (one-at-a-time) -> tornado data
+// Sensitivity (one-at-a-time, multiplicative) -> tornado
 // ------------------------------------------------------------------
 
 const DRIVER_SETTERS = {
-  price: (inp, v) => ({ ...inp, price: v }),
-  utilisation: (inp, v) => ({
+  revenue: (inp, f) =>
+    inp.revenueOverrides
+      ? { ...inp, revenueOverrides: inp.revenueOverrides.map((r) => r * f) }
+      : { ...inp, revenueYear1: inp.revenueYear1 * f },
+  variableCostPct: (inp, f) => ({ ...inp, variableCostPct: inp.variableCostPct * f }),
+  fixedCost: (inp, f) => ({
     ...inp,
-    utilisation: (Array.isArray(inp.utilisation)
-      ? inp.utilisation
-      : Array.from({ length: inp.life }, () => inp.utilisation)
-    ).map((u) => u * v),
+    fixedCost: (Array.isArray(inp.fixedCost) ? inp.fixedCost : Array.from({ length: inp.life }, () => inp.fixedCost)).map(
+      (x) => x * f
+    ),
   }),
-  varCostPerHour: (inp, v) => ({ ...inp, varCostPerHour: v }),
-  fixedCost: (inp, v) => ({
-    ...inp,
-    fixedCost: (Array.isArray(inp.fixedCost)
-      ? inp.fixedCost
-      : Array.from({ length: inp.life }, () => inp.fixedCost)
-    ).map((f) => f * v),
-  }),
-  equipment: (inp, v) => ({ ...inp, equipment: v }),
-  discountRate: (inp, v) => ({ ...inp, discountRate: v }),
+  initialInvestment: (inp, f) => ({ ...inp, initialInvestment: inp.initialInvestment * f }),
+  salvage: (inp, f) => ({ ...inp, salvage: inp.salvage * f }),
+  discountRate: (inp, f) => ({ ...inp, discountRate: inp.discountRate * f }),
 };
 
-/**
- * For each driver, shift by ±pct and record resulting NPV.
- * `utilisation` and `fixedCost` are shifted multiplicatively (factor),
- * others by scaling their base scalar value.
- */
 export function sensitivity(input, { pct = 0.2, drivers = Object.keys(DRIVER_SETTERS) } = {}) {
   const baseNpv = npv(input.discountRate, buildProject(input).cashflows);
   const results = drivers.map((driver) => {
-    let lowInput;
-    let highInput;
-    if (driver === 'utilisation' || driver === 'fixedCost') {
-      lowInput = DRIVER_SETTERS[driver](input, 1 - pct);
-      highInput = DRIVER_SETTERS[driver](input, 1 + pct);
-    } else {
-      const base = input[driver];
-      lowInput = DRIVER_SETTERS[driver](input, base * (1 - pct));
-      highInput = DRIVER_SETTERS[driver](input, base * (1 + pct));
-    }
+    const lowInput = DRIVER_SETTERS[driver](input, 1 - pct);
+    const highInput = DRIVER_SETTERS[driver](input, 1 + pct);
     const lowNpv = npv(lowInput.discountRate, buildProject(lowInput).cashflows);
     const highNpv = npv(highInput.discountRate, buildProject(highInput).cashflows);
     return {
@@ -393,7 +326,7 @@ export function sensitivity(input, { pct = 0.2, drivers = Object.keys(DRIVER_SET
       upside: Math.max(lowNpv, highNpv) - baseNpv,
     };
   });
-  results.sort((a, b) => b.swing - a.swing); // tornado order
+  results.sort((a, b) => b.swing - a.swing);
   return { baseNpv, pct, results };
 }
 
@@ -401,109 +334,43 @@ export function sensitivity(input, { pct = 0.2, drivers = Object.keys(DRIVER_SET
 // Scenario analysis (best / base / worst)
 // ------------------------------------------------------------------
 
-/**
- * Apply multiplicative driver bundles to build best/base/worst variants and
- * compute the full metric suite for each.
- * bundles = { worst:{price,utilisation,varCostPerHour,fixedCost,equipment}, base:{...}, best:{...} }
- * Each field is a multiplier on the base input value (1 = unchanged).
- */
 export function scenarioAnalysis(input, bundles) {
   const out = {};
   for (const [name, mults] of Object.entries(bundles)) {
-    let variant = { ...input };
-    if (mults.price != null) variant.price = input.price * mults.price;
-    if (mults.varCostPerHour != null)
-      variant.varCostPerHour = input.varCostPerHour * mults.varCostPerHour;
-    if (mults.equipment != null) variant.equipment = input.equipment * mults.equipment;
-    if (mults.utilisation != null) {
-      const baseUtil = Array.isArray(input.utilisation)
-        ? input.utilisation
-        : Array.from({ length: input.life }, () => input.utilisation);
-      variant.utilisation = baseUtil.map((u) => u * mults.utilisation);
+    const v = { ...input };
+    if (mults.revenue != null) {
+      if (input.revenueOverrides) v.revenueOverrides = input.revenueOverrides.map((r) => r * mults.revenue);
+      else v.revenueYear1 = input.revenueYear1 * mults.revenue;
     }
-    if (mults.fixedCost != null) {
-      const baseFixed = Array.isArray(input.fixedCost)
-        ? input.fixedCost
-        : Array.from({ length: input.life }, () => input.fixedCost);
-      variant.fixedCost = baseFixed.map((f) => f * mults.fixedCost);
-    }
-    out[name] = computeMetrics(variant);
+    if (mults.variableCostPct != null) v.variableCostPct = input.variableCostPct * mults.variableCostPct;
+    if (mults.fixedCost != null)
+      v.fixedCost = (Array.isArray(input.fixedCost) ? input.fixedCost : Array.from({ length: input.life }, () => input.fixedCost)).map(
+        (x) => x * mults.fixedCost
+      );
+    if (mults.initialInvestment != null) v.initialInvestment = input.initialInvestment * mults.initialInvestment;
+    out[name] = computeMetrics(v);
   }
   return out;
 }
 
 // ------------------------------------------------------------------
-// Incremental Build - Buy comparison (audit fix F1)
+// Compare investment alternatives (rank by NPV)
 // ------------------------------------------------------------------
 
 /**
- * Builds the incremental (Build minus Buy) cash-flow vector, isolating the
- * capex-vs-opex trade-off. Revenue is common to both and cancels out.
- *
- * buildInput  : the on-prem project input (as for buildProject)
- * cloudRatePerHour : all-in cloud rental cost per GPU-hour served
- * cloudFixedCost   : annual fixed cost that remains in the buy case (scalar/array)
- *
- * Incremental t0     = build initial outlay (capex + install + WC)
- * Incremental OCF_t  = (cloudCostAvoided_t - onPremVariable_t - (buildFixed_t - buyFixed_t))*(1-tax)
- *                      + tax * depreciation_t
- * Incremental tN add = after-tax salvage + WC recovery
+ * alternatives: [{ key, name, blurb?, input }]
+ * Returns each alternative's full metric suite plus an NPV-ranked view.
  */
-export function incrementalBuildVsBuy(buildInput, { cloudRatePerHour, cloudFixedCost = 0 }) {
-  const bp = buildProject(buildInput);
-  const tax = buildInput.tax;
-  const buyFixedArr = Array.isArray(cloudFixedCost)
-    ? cloudFixedCost
-    : Array.from({ length: buildInput.life }, () => cloudFixedCost);
-
-  const cf = [bp.initial];
-  const rows = [];
-  bp.rows.forEach((r, i) => {
-    const cloudAvoided = cloudRatePerHour * r.soldHours;
-    const buildFixed = r.fixed;
-    const buyFixed = buyFixedArr[i];
-    // Opportunity cost is a Build-side cost only (renting uses no owned space),
-    // so it belongs in the incremental Build-minus-Buy comparison.
-    const pretax = cloudAvoided - r.variable - (buildFixed - buyFixed) - r.opportunity;
-    const incOcf = pretax * (1 - tax) + tax * r.depreciation;
-    rows.push({ year: r.year, cloudAvoided, onPremVariable: r.variable, incOcf });
-    cf.push(incOcf);
-  });
-  cf[buildInput.life] += bp.terminalAdd;
-
-  const rate = buildInput.discountRate;
-  return {
-    rows,
-    cashflows: cf,
-    npv: npv(rate, cf),
-    irr: irr(cf),
-    profitabilityIndex: profitabilityIndex(rate, cf),
-    payback: paybackPeriod(cf),
-  };
-}
-
-/**
- * Standalone "Buy" (cloud rental) project — pure opex, no capex, no depreciation.
- * Serves the same demand (soldHours) as the build case. Used alongside Build to
- * present the full picture; by construction Build_NPV - Buy_NPV == incremental NPV.
- */
-export function buyStandalone(buildInput, { cloudRatePerHour, cloudFixedCost = 0 }) {
-  const bp = buildProject(buildInput);
-  const tax = buildInput.tax;
-  const buyFixedArr = Array.isArray(cloudFixedCost)
-    ? cloudFixedCost
-    : Array.from({ length: buildInput.life }, () => cloudFixedCost);
-  const cf = [0];
-  const rows = [];
-  bp.rows.forEach((r, i) => {
-    const cloudCost = cloudRatePerHour * r.soldHours;
-    const pretax = r.revenue - cloudCost - buyFixedArr[i];
-    const ocf = pretax * (1 - tax);
-    rows.push({ year: r.year, revenue: r.revenue, cloudCost, ocf });
-    cf.push(ocf);
-  });
-  const rate = buildInput.discountRate;
-  return { rows, cashflows: cf, npv: npv(rate, cf), irr: irr(cf) };
+export function compareAlternatives(alternatives) {
+  const rows = alternatives.map((a) => ({
+    key: a.key,
+    name: a.name,
+    blurb: a.blurb,
+    input: a.input,
+    metrics: computeMetrics(a.input),
+  }));
+  const ranked = [...rows].sort((x, y) => y.metrics.npv - x.metrics.npv);
+  return { rows, ranked, best: ranked[0] };
 }
 
 export const _internal = { sum, round };

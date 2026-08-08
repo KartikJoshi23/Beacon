@@ -18,7 +18,8 @@
   z-index: 0;
   pointer-events: none;
 }
-.verdict > * {
+.verdict__left,
+.verdict__stats {
   position: relative;
   z-index: 1;
 }

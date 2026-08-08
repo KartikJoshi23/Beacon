@@ -29,10 +29,10 @@ body::before {
   inset: 0;
   z-index: -2;
   background:
-    radial-gradient(60% 50% at 12% 8%, rgba(var(--violet-rgb), 0.18), transparent 60%),
-    radial-gradient(50% 45% at 88% 4%, rgba(var(--cyan-rgb), 0.16), transparent 55%),
-    radial-gradient(60% 60% at 78% 92%, rgba(var(--magenta-rgb), 0.12), transparent 60%),
-    radial-gradient(50% 50% at 20% 96%, rgba(var(--blue-rgb), 0.1), transparent 60%),
+    radial-gradient(58% 48% at 14% 6%, rgba(var(--amber-rgb), 0.16), transparent 60%),
+    radial-gradient(52% 46% at 88% 4%, rgba(var(--magenta-rgb), 0.14), transparent 56%),
+    radial-gradient(60% 60% at 80% 92%, rgba(var(--violet-rgb), 0.12), transparent 60%),
+    radial-gradient(50% 50% at 18% 96%, rgba(var(--cyan-rgb), 0.1), transparent 60%),
     var(--bg-0);
 }
 
