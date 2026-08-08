@@ -1,0 +1,71 @@
+/* ============================================================
+   Project PROMETHEUS — Design Tokens
+   Dark, premium, multi-color (cohesive, no single-accent domination)
+   ============================================================ */
+:root {
+  /* --- Base surfaces --- */
+  --bg-0: #05060c;
+  --bg-1: #090a13;
+  --bg-2: #0d0f1b;
+  --bg-3: #12152400;
+
+  /* --- Accent palette (semantic + thematic) --- */
+  --cyan: #22d3ee;
+  --violet: #8b5cf6;
+  --magenta: #f472b6;
+  --amber: #fbbf24;
+  --emerald: #34d399;
+  --blue: #4f7cff;
+  --rose: #fb7185;
+
+  /* --- Accent RGB (for alpha compositing) --- */
+  --cyan-rgb: 34, 211, 238;
+  --violet-rgb: 139, 92, 246;
+  --magenta-rgb: 244, 114, 182;
+  --amber-rgb: 251, 191, 36;
+  --emerald-rgb: 52, 211, 153;
+  --blue-rgb: 79, 124, 255;
+
+  /* --- Semantic mapping --- */
+  --pos: var(--emerald);
+  --pos-rgb: var(--emerald-rgb);
+  --neg: var(--magenta);
+  --neg-rgb: var(--magenta-rgb);
+  --warn: var(--amber);
+  --warn-rgb: var(--amber-rgb);
+
+  /* --- Text --- */
+  --text: #eaecf6;
+  --text-muted: #9aa3bd;
+  --text-dim: #626c8c;
+
+  /* --- Glass --- */
+  --glass-bg: rgba(255, 255, 255, 0.038);
+  --glass-bg-strong: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-border-strong: rgba(255, 255, 255, 0.16);
+  --glass-blur: 18px;
+
+  /* --- Gradients --- */
+  --grad-primary: linear-gradient(120deg, var(--cyan), var(--violet));
+  --grad-flame: linear-gradient(160deg, var(--cyan) 0%, var(--violet) 48%, var(--magenta) 100%);
+  --grad-warm: linear-gradient(120deg, var(--amber), var(--magenta));
+  --grad-cool: linear-gradient(120deg, var(--blue), var(--cyan));
+
+  /* --- Typography --- */
+  --font-display: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Code', monospace;
+
+  /* --- Radii / spacing / shadow --- */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 30px;
+  --shadow-soft: 0 10px 40px -12px rgba(0, 0, 0, 0.55);
+  --shadow-glow: 0 0 0 1px var(--glass-border), 0 20px 60px -20px rgba(0, 0, 0, 0.7);
+
+  /* --- Layout --- */
+  --maxw: 1360px;
+  --nav-h: 68px;
+}
