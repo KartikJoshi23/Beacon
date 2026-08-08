@@ -21,6 +21,7 @@ import {
   scenarioAnalysis,
   npvBreakEvenUtilisation,
   incrementalBuildVsBuy,
+  buyStandalone,
 } from '../src/lib/finance.js';
 import { BASE_CASE, CLOUD_ALTERNATIVE, SMALL_TIER, SCENARIO_BUNDLES } from '../src/data/prometheus.js';
 
@@ -121,8 +122,11 @@ check('worst NPV < base NPV < best NPV', sc.worst.npv < sc.base.npv && sc.base.n
 // ---------------------------------------------------------------
 console.log('\n[7] Incremental Build-vs-Buy sanity');
 const inc = incrementalBuildVsBuy(BASE_CASE, CLOUD_ALTERNATIVE);
+const buy = buyStandalone(BASE_CASE, CLOUD_ALTERNATIVE);
 check('incremental cash flow vector has correct length', inc.cashflows.length === BASE_CASE.life + 1);
 check('incremental t0 == build initial outlay', near(inc.cashflows[0], proj.initial));
+check('reconciliation: Build NPV - Buy NPV == incremental NPV',
+  near(m.npv - buy.npv, inc.npv, 1e-6), `build-buy=${m.npv - buy.npv} inc=${inc.npv}`);
 
 // ---------------------------------------------------------------
 // Results dashboard (for spreadsheet eyeballing)
@@ -148,6 +152,7 @@ console.log(' 13  Scenarios:');
 console.log('\n=== BUILD vs BUY ===');
 const buildNpv = m.npv;
 console.log(`     Build (on-prem) standalone NPV   ${money(buildNpv)}`);
+console.log(`     Buy (cloud) standalone NPV       ${money(buy.npv)}`);
 console.log(`     Incremental (Build - Buy) NPV    ${money(inc.npv)}  IRR ${pct(inc.irr)}  PI ${inc.profitabilityIndex.toFixed(3)}`);
 const small = computeMetrics(SMALL_TIER);
 console.log(`     Small tier (16-GPU) NPV          ${money(small.npv)}  IRR ${pct(small.irr)}`);

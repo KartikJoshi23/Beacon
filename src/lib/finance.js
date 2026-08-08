@@ -462,7 +462,9 @@ export function incrementalBuildVsBuy(buildInput, { cloudRatePerHour, cloudFixed
     const cloudAvoided = cloudRatePerHour * r.soldHours;
     const buildFixed = r.fixed;
     const buyFixed = buyFixedArr[i];
-    const pretax = cloudAvoided - r.variable - (buildFixed - buyFixed);
+    // Opportunity cost is a Build-side cost only (renting uses no owned space),
+    // so it belongs in the incremental Build-minus-Buy comparison.
+    const pretax = cloudAvoided - r.variable - (buildFixed - buyFixed) - r.opportunity;
     const incOcf = pretax * (1 - tax) + tax * r.depreciation;
     rows.push({ year: r.year, cloudAvoided, onPremVariable: r.variable, incOcf });
     cf.push(incOcf);
@@ -478,6 +480,30 @@ export function incrementalBuildVsBuy(buildInput, { cloudRatePerHour, cloudFixed
     profitabilityIndex: profitabilityIndex(rate, cf),
     payback: paybackPeriod(cf),
   };
+}
+
+/**
+ * Standalone "Buy" (cloud rental) project — pure opex, no capex, no depreciation.
+ * Serves the same demand (soldHours) as the build case. Used alongside Build to
+ * present the full picture; by construction Build_NPV - Buy_NPV == incremental NPV.
+ */
+export function buyStandalone(buildInput, { cloudRatePerHour, cloudFixedCost = 0 }) {
+  const bp = buildProject(buildInput);
+  const tax = buildInput.tax;
+  const buyFixedArr = Array.isArray(cloudFixedCost)
+    ? cloudFixedCost
+    : Array.from({ length: buildInput.life }, () => cloudFixedCost);
+  const cf = [0];
+  const rows = [];
+  bp.rows.forEach((r, i) => {
+    const cloudCost = cloudRatePerHour * r.soldHours;
+    const pretax = r.revenue - cloudCost - buyFixedArr[i];
+    const ocf = pretax * (1 - tax);
+    rows.push({ year: r.year, revenue: r.revenue, cloudCost, ocf });
+    cf.push(ocf);
+  });
+  const rate = buildInput.discountRate;
+  return { rows, cashflows: cf, npv: npv(rate, cf), irr: irr(cf) };
 }
 
 export const _internal = { sum, round };

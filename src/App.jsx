@@ -1,12 +1,32 @@
 import { useMemo, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { computeMetrics, incrementalBuildVsBuy } from './lib/finance.js';
+import {
+  computeMetrics,
+  incrementalBuildVsBuy,
+  buyStandalone,
+  sensitivity as computeSensitivity,
+  scenarioAnalysis,
+} from './lib/finance.js';
 import { deriveVerdict } from './lib/verdict.js';
-import { BASE_CASE, CLOUD_ALTERNATIVE } from './data/prometheus.js';
+import { BASE_CASE, CLOUD_ALTERNATIVE, SCENARIO_BUNDLES } from './data/prometheus.js';
 import InputForm from './components/InputForm.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import VerdictBanner from './components/VerdictBanner.jsx';
+import AnalysisSection from './components/AnalysisSection.jsx';
 import './App.css';
+
+/** Derive a half-scale "small tier" alternative from the current inputs. */
+function deriveSmallTier(input) {
+  return {
+    ...input,
+    equipment: input.equipment * 0.5,
+    installation: input.installation * 0.6,
+    transportation: input.transportation * 0.5,
+    workingCapital: input.workingCapital * 0.6,
+    capacityHours: input.capacityHours * 0.5,
+    salvage: input.salvage * 0.5,
+  };
+}
 
 const INITIAL = {
   ...BASE_CASE,
@@ -50,6 +70,18 @@ export default function App() {
     () => deriveVerdict({ metrics, incremental, wacc: input.discountRate, life: input.life }),
     [metrics, incremental, input.discountRate, input.life]
   );
+
+  const sensitivity = useMemo(() => computeSensitivity(input, { pct: 0.2 }), [input]);
+  const scenarios = useMemo(() => scenarioAnalysis(input, SCENARIO_BUNDLES), [input]);
+  const buy = useMemo(
+    () =>
+      buyStandalone(input, {
+        cloudRatePerHour: input.cloudRatePerHour,
+        cloudFixedCost: input.cloudFixedCost,
+      }),
+    [input]
+  );
+  const small = useMemo(() => computeMetrics(deriveSmallTier(input)), [input]);
 
   return (
     <div className="app">
@@ -113,6 +145,19 @@ export default function App() {
           <Dashboard metrics={metrics} incremental={incremental} input={input} />
         </div>
       </main>
+
+      <div className="container">
+        <AnalysisSection
+          metrics={metrics}
+          sensitivity={sensitivity}
+          scenarios={scenarios}
+          build={metrics}
+          buy={buy}
+          small={small}
+          incremental={incremental}
+          wacc={input.discountRate}
+        />
+      </div>
 
       <footer className="footer">
         <div className="container footer__inner">
