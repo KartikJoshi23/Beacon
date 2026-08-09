@@ -18,28 +18,54 @@
 }
 .hero {
   position: relative;
-  padding: clamp(24px, 5vw, 60px) 0 clamp(8px, 2vw, 20px);
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(24px, 5vw, 56px) 0 clamp(20px, 4vw, 48px);
   overflow: hidden;
 }
-.hero__orb {
+.hero__scene {
   position: absolute;
-  top: -160px;
-  right: -100px;
-  width: 560px;
-  height: 560px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 42% 40%, rgba(var(--amber-rgb), 0.5), transparent 55%),
-    radial-gradient(circle at 62% 58%, rgba(var(--magenta-rgb), 0.42), transparent 60%),
-    radial-gradient(circle at 55% 74%, rgba(var(--violet-rgb), 0.34), transparent 62%);
-  filter: blur(48px);
-  opacity: 0.6;
-  animation: floaty 15s ease-in-out infinite;
+  inset: 0;
+  z-index: 0;
   pointer-events: none;
 }
-@keyframes floaty {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-22px, 24px) scale(1.06); }
+.hero__scene canvas {
+  display: block;
+}
+/* Fade the 3D grid into the page at top and bottom for a clean blend. */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 8, 6, 0.35) 0%,
+    transparent 22%,
+    transparent 60%,
+    rgba(11, 8, 6, 0.78) 100%
+  );
+}
+/* Left scrim so the headline/lede stay legible over the 3D scene. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(11, 8, 6, 0.78) 0%,
+    rgba(11, 8, 6, 0.4) 34%,
+    transparent 62%
+  );
+}
+.hero__content {
+  position: relative;
+  z-index: 1;
 }
 .hero__chip {
   color: var(--amber);

@@ -12,6 +12,7 @@ import AnalysisSection from './components/AnalysisSection.jsx';
 import AlternativesCompare from './components/AlternativesCompare.jsx';
 import AIInsight from './components/AIInsight.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
+import HeroScene from './components/HeroScene.jsx';
 import './App.css';
 
 function SectionHead({ eyebrow, title, sub }) {
@@ -71,23 +72,25 @@ export default function App() {
               {tab === 'overview' && (
                 <section className="overview">
                   <div className="hero">
-                    <div className="hero__orb" aria-hidden />
-                    <motion.div className="chip hero__chip" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                      ☕ CAPITAL INVESTMENT APPRAISAL
-                    </motion.div>
-                    <motion.h1 className="hero__title" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.05 }}>
-                      Which new <span className="grad-text">branch</span> should
-                      <br /> we open?
-                    </motion.h1>
-                    <motion.p className="hero__lede" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.12 }}>
-                      {COMPANY.name} — {COMPANY.sector}, {COMPANY.city} — is weighing three candidate sites for its
-                      next outlet. This tool runs the full capital-budgeting appraisal on each: 13 investment
-                      measures, sensitivity &amp; scenario analysis, and an AI-assisted recommendation.
-                    </motion.p>
-                    <div className="hero__chips">
-                      <span className="chip">AED · UAE 9% tax</span>
-                      <span className="chip">3 candidate sites</span>
-                      <span className="chip">6-year horizon</span>
+                    <HeroScene />
+                    <div className="hero__content">
+                      <motion.div className="chip hero__chip" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                        ☕ CAPITAL INVESTMENT APPRAISAL
+                      </motion.div>
+                      <motion.h1 className="hero__title" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.05 }}>
+                        Which new <span className="grad-text">branch</span> should
+                        <br /> we open?
+                      </motion.h1>
+                      <motion.p className="hero__lede" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.12 }}>
+                        {COMPANY.name} — {COMPANY.sector}, {COMPANY.city} — is weighing three candidate sites for its
+                        next outlet. This tool runs the full capital-budgeting appraisal on each: 13 investment
+                        measures, sensitivity &amp; scenario analysis, and an AI-assisted recommendation.
+                      </motion.p>
+                      <div className="hero__chips">
+                        <span className="chip">AED · UAE 9% tax</span>
+                        <span className="chip">3 candidate sites</span>
+                        <span className="chip">6-year horizon</span>
+                      </div>
                     </div>
                   </div>
 
