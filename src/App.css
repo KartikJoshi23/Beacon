@@ -91,3 +91,7 @@
 section > .verdict {
   margin-bottom: 4px;
 }
+
+.ai-chat-wrap {
+  margin-top: 16px;
+}

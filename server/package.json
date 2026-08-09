@@ -1,0 +1,18 @@
+{
+  "name": "beacon-advisor-backend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Project BEACON - NVIDIA-backed AI Advisor proxy (streaming chat + one-shot insight). Reuses the SSE streaming + OpenAI-compatible client patterns from the Gen-AI Chatbot core.",
+  "author": "Kartik Joshi",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "openai": "^4.73.0"
+  }
+}

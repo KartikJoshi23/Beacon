@@ -11,6 +11,7 @@ import VerdictBanner from './components/VerdictBanner.jsx';
 import AnalysisSection from './components/AnalysisSection.jsx';
 import AlternativesCompare from './components/AlternativesCompare.jsx';
 import AIInsight from './components/AIInsight.jsx';
+import ChatPanel from './components/ChatPanel.jsx';
 import './App.css';
 
 function SectionHead({ eyebrow, title, sub }) {
@@ -153,6 +154,9 @@ export default function App() {
                     sub="An AI reading of the numbers — explanation, risks, alternative comparison and a final Accept / Reject / Delay / Review verdict — to support (not replace) your judgement."
                   />
                   <AIInsight insight={insight} />
+                  <div className="ai-chat-wrap">
+                    <ChatPanel input={input} metrics={metrics} comparison={comparison} currentName={currentName} />
+                  </div>
                 </section>
               )}
             </motion.div>

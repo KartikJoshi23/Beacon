@@ -171,6 +171,7 @@ label {
 
 input[type='number'],
 input[type='text'],
+textarea,
 select {
   width: 100%;
   padding: 10px 12px;
@@ -185,6 +186,7 @@ select {
 }
 input[type='number']:focus,
 input[type='text']:focus,
+textarea:focus,
 select:focus {
   border-color: rgba(var(--cyan-rgb), 0.7);
   box-shadow: 0 0 0 3px rgba(var(--cyan-rgb), 0.14);

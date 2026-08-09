@@ -1,0 +1,19 @@
+# Render deployment for the BEACON AI Advisor backend (free tier).
+# Create the service from this repo; set NVIDIA_API_KEY + ALLOWED_ORIGIN in the
+# Render dashboard (ALLOWED_ORIGIN = your Vercel URL).
+services:
+  - type: web
+    name: beacon-advisor
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NVIDIA_API_KEY
+        sync: false
+      - key: NVIDIA_MODEL
+        value: meta/llama-3.3-70b-instruct
+      - key: ALLOWED_ORIGIN
+        sync: false
