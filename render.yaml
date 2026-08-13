@@ -15,5 +15,3 @@ services:
         sync: false
       - key: NVIDIA_MODEL
         value: meta/llama-3.1-8b-instruct
-      - key: ALLOWED_ORIGIN
-        sync: false

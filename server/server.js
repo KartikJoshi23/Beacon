@@ -22,9 +22,12 @@ import 'dotenv/config';
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 
-const ORIGINS = (process.env.ALLOWED_ORIGIN || 'http://localhost:5173,http://localhost:4173')
-  .split(',')
-  .map((s) => s.trim());
+// CORS: if ALLOWED_ORIGIN is set, restrict to it (comma-separated). Otherwise
+// allow all origins — this endpoint holds no user data and the API key stays
+// server-side, so an open CORS policy is fine and removes a deploy step.
+const ORIGINS = process.env.ALLOWED_ORIGIN
+  ? process.env.ALLOWED_ORIGIN.split(',').map((s) => s.trim())
+  : true;
 app.use(cors({ origin: ORIGINS }));
 
 const MODEL = process.env.NVIDIA_MODEL || 'meta/llama-3.1-8b-instruct';

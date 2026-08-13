@@ -43,7 +43,7 @@ npm run verify         # 19/19 checks
 | `NVIDIA_API_KEY` | yes | `nvapi-…` |
 | `NVIDIA_MODEL` | no | `meta/llama-3.1-8b-instruct` (fast, default) |
 | `NVIDIA_BASE_URL` | no | `https://integrate.api.nvidia.com/v1` |
-| `ALLOWED_ORIGIN` | yes (prod) | your Vercel URL, comma-separated |
+| `ALLOWED_ORIGIN` | no (optional) | leave unset to allow all origins |
 | `PORT` | no | Render sets this automatically |
 
 **Frontend (`.env` / Vercel env)**
@@ -56,48 +56,37 @@ npm run verify         # 19/19 checks
 
 ---
 
-## 3. Deploy
+## 3. Deploy (free, ~5 minutes)
 
-Deploy the **backend first** (to get its URL), then the **frontend**, then point them at each other.
+Two deploys: the **backend** on Render, then the **frontend** on Vercel. You add exactly **one variable in each** — nothing else.
 
-### 3a. Backend → Render (free)
+> **What "environment variable" means here:** a name/value pair you type into the host's dashboard. You'll add `NVIDIA_API_KEY` on Render (value = your `nvapi-…` key) and `VITE_API_URL` on Vercel (value = your Render URL).
+
+### Step 1 — Backend on Render
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/KartikJoshi23/Beacon)
 
-One click uses `render.yaml`. Or set it up manually — **New → Web Service → connect the `Beacon` repo**, then enter exactly:
+1. Click the button → sign in with GitHub → it auto-configures everything from `render.yaml` (root dir, build, start command).
+2. It shows **one empty field, `NVIDIA_API_KEY`** — paste your `nvapi-…` key there.
+3. Click **Apply / Deploy**. When it's live you get a URL like `https://beacon-advisor.onrender.com`. **Copy it.**
+4. (Optional check) open `https://…onrender.com/health` → you should see `{"status":"ok","hasKey":true}`.
 
-| Field | Value |
-|---|---|
-| **Root Directory** | `server` |
-| **Runtime** | `Node` |
-| **Build Command** | `npm install` |
-| **Start Command** | `npm start` |
-| **Health Check Path** | `/health` |
-| **Instance Type** | Free |
+<details><summary>Prefer to set it up by hand instead of the button?</summary>
 
-Then add **Environment** variables: `NVIDIA_API_KEY` = your key, `NVIDIA_MODEL` = `meta/llama-3.1-8b-instruct`, and `ALLOWED_ORIGIN` = your Vercel URL (fill in after step 3b). Deploy → you get e.g. `https://beacon-advisor.onrender.com`. Confirm it's up: open `https://…onrender.com/health` → `{"status":"ok","hasKey":true}`.
+New → Web Service → connect the `Beacon` repo, then set: **Root Directory** = `server`, **Build Command** = `npm install`, **Start Command** = `npm start`, **Instance Type** = Free. Then under **Environment → Add Environment Variable**: Key = `NVIDIA_API_KEY`, Value = your `nvapi-…` key. Deploy.
+</details>
 
-> Free Render services sleep after inactivity; the first request after idling takes ~30s to wake. The app shows a graceful "connecting…" state and falls back offline if needed.
+> Free Render services sleep after ~15 min idle; the first request then takes ~30s to wake (the chat shows "connecting…" and falls back offline meanwhile).
 
-### 3b. Frontend → Vercel (free)
+### Step 2 — Frontend on Vercel
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/KartikJoshi23/Beacon&project-name=beacon&env=VITE_API_URL)
 
-Or manually — **New Project → import the `Beacon` repo**:
+1. Click the button → sign in with GitHub → it imports the repo (Vite auto-detected via `vercel.json`).
+2. It asks for **one variable, `VITE_API_URL`** — paste the Render URL from Step 1 (e.g. `https://beacon-advisor.onrender.com`).
+3. Click **Deploy**. You get a URL like `https://beacon-xxxx.vercel.app` — that's your live app.
 
-| Field | Value |
-|---|---|
-| **Framework Preset** | Vite (auto-detected via `vercel.json`) |
-| **Root Directory** | `./` |
-| **Build Command** | `npm run build` |
-| **Output Directory** | `dist` |
-| **Environment Variable** | `VITE_API_URL` = your Render URL from 3a |
-
-Deploy → you get e.g. `https://beacon-xxxx.vercel.app`.
-
-### 3c. Connect them
-
-Back in **Render → your service → Environment**, set `ALLOWED_ORIGIN` to your Vercel URL (e.g. `https://beacon-xxxx.vercel.app`) and save (it redeploys). Done — open the Vercel URL and the floating **✦ Ask the Advisor** shows a green **LIVE** pill.
+That's the whole thing. Open the Vercel URL; the floating **✦ Ask the Advisor** will show a green **LIVE** pill. **No CORS / `ALLOWED_ORIGIN` step** — the backend accepts your frontend by default.
 
 ---
 
