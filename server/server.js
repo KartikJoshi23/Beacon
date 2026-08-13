@@ -27,7 +27,7 @@ const ORIGINS = (process.env.ALLOWED_ORIGIN || 'http://localhost:5173,http://loc
   .map((s) => s.trim());
 app.use(cors({ origin: ORIGINS }));
 
-const MODEL = process.env.NVIDIA_MODEL || 'meta/llama-3.3-70b-instruct';
+const MODEL = process.env.NVIDIA_MODEL || 'meta/llama-3.1-8b-instruct';
 const BASE_URL = process.env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1';
 const hasKey = () => !!process.env.NVIDIA_API_KEY;
 
