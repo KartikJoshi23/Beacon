@@ -8,7 +8,7 @@ const TABS = [
   { id: 'results', label: 'Results' },
   { id: 'analysis', label: 'Analysis' },
   { id: 'alternatives', label: 'Alternatives' },
-  { id: 'ai', label: 'AI Advisor' },
+  { id: 'ai', label: 'AI Insight' },
 ];
 
 export default function Nav({ active, setActive, verdict, metrics }) {

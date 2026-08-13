@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { computeMetrics, sensitivity as computeSensitivity, scenarioAnalysis, compareAlternatives } from './lib/finance.js';
 import { deriveVerdict } from './lib/verdict.js';
 import { generateInsight } from './lib/insight.js';
@@ -11,7 +11,7 @@ import VerdictBanner from './components/VerdictBanner.jsx';
 import AnalysisSection from './components/AnalysisSection.jsx';
 import AlternativesCompare from './components/AlternativesCompare.jsx';
 import AIInsight from './components/AIInsight.jsx';
-import ChatPanel from './components/ChatPanel.jsx';
+import FloatingChat from './components/FloatingChat.jsx';
 import HeroScene from './components/HeroScene.jsx';
 import './App.css';
 
@@ -61,12 +61,10 @@ export default function App() {
 
       <main className="main">
         <div className="container">
-          <AnimatePresence mode="wait">
-            <motion.div
+          <motion.div
               key={tab}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             >
               {tab === 'overview' && (
@@ -152,18 +150,14 @@ export default function App() {
               {tab === 'ai' && (
                 <section>
                   <SectionHead
-                    eyebrow="AI ADVISOR"
+                    eyebrow="AI INSIGHT"
                     title="Plain-language insight &amp; recommendation"
-                    sub="An AI reading of the numbers — explanation, risks, alternative comparison and a final Accept / Reject / Delay / Review verdict — to support (not replace) your judgement."
+                    sub="An AI reading of the numbers — explanation, risks, alternative comparison and a final Accept / Reject / Delay / Review verdict. Use the floating ✦ Advisor (bottom-right) to ask follow-up questions on any tab."
                   />
                   <AIInsight insight={insight} />
-                  <div className="ai-chat-wrap">
-                    <ChatPanel input={input} metrics={metrics} comparison={comparison} currentName={currentName} />
-                  </div>
                 </section>
               )}
             </motion.div>
-          </AnimatePresence>
         </div>
       </main>
 
@@ -173,6 +167,17 @@ export default function App() {
           <span className="mono dim">Kartik Joshi · Masters in AI with Business</span>
         </div>
       </footer>
+
+      <FloatingChat
+        activeTab={tab}
+        input={input}
+        metrics={metrics}
+        comparison={comparison}
+        sensitivity={sensitivity}
+        scenarios={scenarios}
+        currentName={currentName}
+        verdict={verdict}
+      />
     </div>
   );
 }

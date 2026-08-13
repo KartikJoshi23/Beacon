@@ -1,0 +1,270 @@
+.fc-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 90;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 22px;
+  color: #1a1206;
+  background: var(--grad-primary);
+  box-shadow: 0 10px 30px -8px rgba(var(--amber-rgb), 0.6), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+}
+.fc-fab--open {
+  background: var(--glass-bg-strong);
+  color: var(--text);
+  border: 1px solid var(--glass-border-strong);
+}
+
+.fc {
+  position: fixed;
+  right: 24px;
+  bottom: 92px;
+  z-index: 90;
+  width: min(400px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - 140px));
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 30px 80px -24px rgba(0, 0, 0, 0.7);
+}
+/* Higher specificity than .glass-strong so the popover stays readable over charts. */
+.fc.glass-strong {
+  background: rgba(14, 10, 7, 0.93);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+}
+
+.fc__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--glass-border);
+}
+.fc__head-l {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.fc__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+}
+.fc__pill {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border-strong);
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.fc__pill--live {
+  color: var(--emerald);
+  border-color: color-mix(in srgb, var(--emerald) 45%, transparent);
+}
+.fc__pill--off {
+  color: var(--amber);
+  border-color: color-mix(in srgb, var(--amber) 40%, transparent);
+}
+.fc__head-r {
+  display: flex;
+  gap: 6px;
+}
+.fc__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fc__icon:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--glass-border-strong);
+}
+.fc__icon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.fc__scope {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--glass-border);
+  flex-wrap: wrap;
+}
+.fc__scope-label {
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.fc__seg {
+  display: inline-flex;
+  border-radius: 999px;
+  border: 1px solid var(--glass-border-strong);
+  padding: 2px;
+  gap: 2px;
+}
+.fc__seg button {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fc__seg button.on {
+  background: var(--grad-primary);
+  color: #1a1206;
+  font-weight: 600;
+}
+.fc__ctx {
+  font-size: 10px;
+  color: var(--amber);
+  margin-left: auto;
+}
+
+.fc__log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.fc__empty p {
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.fc__suggest {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.fc__chip {
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  padding: 8px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border-strong);
+  background: var(--glass-bg);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fc__chip:hover:not(:disabled) {
+  color: var(--text);
+  border-color: rgba(var(--amber-rgb), 0.5);
+}
+.fc__chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.fc__msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 88%;
+}
+.fc__msg--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.fc__msg--assistant {
+  align-self: flex-start;
+}
+.fc__who {
+  font-size: 9.5px;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+  margin-bottom: 3px;
+  padding-left: 4px;
+}
+.fc__bubble {
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 13.3px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.fc__msg--user .fc__bubble {
+  background: var(--grad-primary);
+  color: #1a1206;
+  border-bottom-right-radius: 4px;
+  font-weight: 500;
+}
+.fc__msg--assistant .fc__bubble {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.fc__msg--error .fc__bubble {
+  border-color: color-mix(in srgb, var(--amber) 40%, transparent);
+  color: var(--text-muted);
+}
+
+.fc__typing {
+  display: inline-flex;
+  gap: 4px;
+}
+.fc__typing i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  animation: blink 1.2s infinite ease-in-out;
+}
+.fc__typing i:nth-child(2) { animation-delay: 0.2s; }
+.fc__typing i:nth-child(3) { animation-delay: 0.4s; }
+
+.fc__composer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--glass-border);
+  align-items: flex-end;
+}
+.fc__composer textarea {
+  flex: 1;
+  resize: none;
+  max-height: 100px;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding: 10px 12px;
+}
+.fc__send {
+  padding: 10px 15px;
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+@media (max-width: 520px) {
+  .fc {
+    right: 12px;
+    bottom: 84px;
+    width: calc(100vw - 24px);
+  }
+  .fc-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+}
