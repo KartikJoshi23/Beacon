@@ -11,6 +11,7 @@ import VerdictBanner from './components/VerdictBanner.jsx';
 import AnalysisSection from './components/AnalysisSection.jsx';
 import AlternativesCompare from './components/AlternativesCompare.jsx';
 import AIInsight from './components/AIInsight.jsx';
+import CashFlowTable from './components/CashFlowTable.jsx';
 import FloatingChat from './components/FloatingChat.jsx';
 import HeroScene from './components/HeroScene.jsx';
 import './App.css';
@@ -122,6 +123,7 @@ export default function App() {
                   />
                   <VerdictBanner verdict={verdict} metrics={metrics} wacc={input.discountRate} />
                   <Dashboard metrics={metrics} input={input} />
+                  <CashFlowTable metrics={metrics} input={input} />
                 </section>
               )}
 

@@ -1,0 +1,82 @@
+.cft {
+  margin-top: 18px;
+  padding: 20px 22px 8px;
+  border-radius: var(--r-lg);
+}
+.cft__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.cft__eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.cft__title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+}
+.cft__badge {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  align-self: center;
+}
+.cft__scroll {
+  overflow-x: auto;
+  margin: 0 -22px;
+  padding: 0 22px 14px;
+}
+.cft__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.cft__table th,
+.cft__table td {
+  padding: 9px 12px;
+  text-align: right;
+  border-bottom: 1px solid var(--glass-border);
+}
+.cft__table thead th {
+  color: var(--text-dim);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--glass-border-strong);
+}
+.cft__table .cft__yr {
+  text-align: left;
+  color: var(--text-muted);
+}
+.cft__table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.cft__t0row td {
+  color: var(--text-muted);
+}
+.cft__dim {
+  text-align: left !important;
+  color: var(--text-dim);
+  font-style: italic;
+  white-space: normal;
+}
+.cft__table tfoot td {
+  padding-top: 12px;
+  font-weight: 700;
+  font-size: 13.5px;
+  border-bottom: none;
+  color: var(--text);
+}
+.cft__table tfoot .cft__yr {
+  text-align: right;
+  color: var(--text-muted);
+  font-weight: 600;
+}

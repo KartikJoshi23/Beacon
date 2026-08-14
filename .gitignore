@@ -28,3 +28,7 @@ report/*.toc
 report/*.out
 report/*.synctex.gz
 report/pass*.log
+
+# Not needed in the GitHub repo (Part B report + figures are separate submission deliverables)
+report/
+screenshots/
